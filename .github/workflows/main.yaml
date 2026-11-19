@@ -1,0 +1,150 @@
+name: Iris MLOps CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  IMAGE_NAME: iris-streamlit-app
+  MIN_ACCURACY: "0.85"   # minimum champion TEST accuracy
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dvc.txt
+
+      - name: Install training dependencies
+        run: pip install -r requirements-dvc.txt
+
+      - name: Run DVC pipeline (train, compare, select champion, evaluate)
+        run: dvc repro
+
+      - name: Show metrics
+        run: dvc metrics show
+
+      - name: Publish model comparison to job summary
+        if: always()
+        run: |
+          if [ -f reports/model_comparison.md ]; then
+            cat reports/model_comparison.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Quality gate (accuracy, overfitting gap, selection sanity)
+        run: |
+          python - <<'PY'
+          import json, os, sys
+          import yaml
+
+          metrics = json.load(open("reports/metrics.json"))
+          selection = json.load(open("reports/model_selection.json"))
+          params = yaml.safe_load(open("params.yaml"))
+
+          min_acc = float(os.environ["MIN_ACCURACY"])
+          max_gap = float(params["selection"]["max_accuracy_gap_pct"])
+
+          test_acc = metrics["accuracy"]
+          gap = metrics["champion_accuracy_gap_pct"]
+          champion = selection["champion"]["model_name"]
+          fallback = selection["selection_policy"]["fallback_used"]
+
+          print(f"Champion: {champion}")
+          print(f"Test accuracy : {test_acc:.4f} (min {min_acc})")
+          print(f"Accuracy gap  : {gap:.2f} pp (must be < {max_gap})")
+          print(f"Fallback used : {fallback}")
+
+          failures = []
+          if test_acc < min_acc:
+              failures.append("test accuracy below minimum")
+          if gap >= max_gap:
+              failures.append("champion accuracy gap not strictly below threshold")
+          if fallback:
+              failures.append("no model met the accuracy-gap rule (fallback was used)")
+
+          if failures:
+              print("QUALITY GATE FAILED: " + "; ".join(failures))
+              sys.exit(1)
+          print("Quality gate passed")
+          PY
+
+      - name: Upload champion model and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-artifacts
+          path: |
+            models/model.pkl
+            reports/metrics.json
+            reports/evaluation_details.json
+            reports/model_selection.json
+            reports/model_comparison.csv
+            reports/model_comparison.md
+          if-no-files-found: error
+
+  docker:
+    needs: train
+    runs-on: ubuntu-latest
+    env:
+      HAS_DOCKERHUB: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download champion model
+        uses: actions/download-artifact@v4
+        with:
+          name: model-artifacts
+          path: artifacts
+
+      - name: Place model where the Dockerfile expects it
+        run: |
+          mkdir -p models
+          cp artifacts/models/model.pkl models/model.pkl
+
+      - name: Build image
+        run: docker build -t $IMAGE_NAME:latest .
+
+      - name: Smoke test the container
+        run: |
+          docker run -d --name iris-app -p 8501:8501 $IMAGE_NAME:latest
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8501/_stcore/health; then
+              echo; echo "App is healthy"; exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become healthy"; docker logs iris-app; exit 1
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && env.HAS_DOCKERHUB == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push image
+        if: github.event_name == 'push' && env.HAS_DOCKERHUB == 'true'
+        run: |
+          IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME
+          docker tag $IMAGE_NAME:latest $IMAGE:latest
+          docker tag $IMAGE_NAME:latest $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
+          docker push $IMAGE:${{ github.sha }}

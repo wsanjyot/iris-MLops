@@ -1,0 +1,163 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+    - path: data/raw/Iris.csv
+      hash: md5
+      md5: 717820ef0af287ff346c5cabfb4c612c
+      size: 5107
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: d52f97931a7f57c5977c1593a9d5f0ad
+      size: 1137
+    outs:
+    - path: data/ingested/iris.csv
+      hash: md5
+      md5: b1468b5db48bee3135c8eda76ff5bee6
+      size: 4763
+  data_preprocessing:
+    cmd: python src/data_preprocessing.py
+    deps:
+    - path: data/ingested/iris.csv
+      hash: md5
+      md5: b1468b5db48bee3135c8eda76ff5bee6
+      size: 4763
+    - path: src/data_preprocessing.py
+      hash: md5
+      md5: 468f6217860f46aff1753dc7e0aefc23
+      size: 1448
+    params:
+      params.yaml:
+        random_state: 42
+        test_size: 0.2
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: d68f7927237811fafa42deda08bd9f5f
+      size: 1003
+    - path: data/processed/train.csv
+      hash: md5
+      md5: f6e828efd694e083026c968705bbb319
+      size: 3733
+  feature_engineering:
+    cmd: python src/feature_engineering.py
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: d68f7927237811fafa42deda08bd9f5f
+      size: 1003
+    - path: data/processed/train.csv
+      hash: md5
+      md5: f6e828efd694e083026c968705bbb319
+      size: 3733
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: 63b91bd74ad557b38bb54f8b1fe6f6c4
+      size: 1672
+    outs:
+    - path: data/processed/X_test.csv
+      hash: md5
+      md5: 552e7335e83e46f9e49a0004abc7519d
+      size: 565
+    - path: data/processed/X_train.csv
+      hash: md5
+      md5: 631fb0c4b98fdb857ba708e1ac3c869a
+      size: 2044
+    - path: data/processed/y_test.csv
+      hash: md5
+      md5: c403cd5f8b66ee75e569ab7254bade2c
+      size: 469
+    - path: data/processed/y_train.csv
+      hash: md5
+      md5: b4d82424fd6666d6f1ec0bee949f1c13
+      size: 1807
+  model_building:
+    cmd: python src/model_building.py
+    deps:
+    - path: data/processed/X_train.csv
+      hash: md5
+      md5: 631fb0c4b98fdb857ba708e1ac3c869a
+      size: 2044
+    - path: data/processed/y_train.csv
+      hash: md5
+      md5: b4d82424fd6666d6f1ec0bee949f1c13
+      size: 1807
+    - path: src/model_building.py
+      hash: md5
+      md5: 9b48aec44e139fae99c89dc0621f1189
+      size: 21829
+    params:
+      params.yaml:
+        cv_folds: 5
+        experiment_name: Iris_DVC_Pipeline
+        measurement:
+          training_time_repeats: 3
+          prediction_n_samples: 50
+          prediction_repeats: 5
+        n_trials: 30
+        random_state: 42
+        selection:
+          max_accuracy_gap_pct: 5.0
+          accuracy_tolerance_pct: 1.0
+          weights:
+            model_size_mb: 0.4
+            training_time_seconds: 0.3
+            prediction_time_ms: 0.3
+          fallback_if_none_eligible: smallest_gap
+          gap_penalty_in_search: true
+          gap_penalty_weight: 1.0
+    outs:
+    - path: models
+      hash: md5
+      md5: fd435bcd060bae7e33182fcfda1c9130.dir
+      size: 1635899
+      nfiles: 7
+    - path: reports/model_comparison.csv
+      hash: md5
+      md5: e5ec555afe1ea565e33d408af05510f6
+      size: 549
+    - path: reports/model_comparison.md
+      hash: md5
+      md5: 337dbd56af33bcaef19a52f17771ca23
+      size: 771
+    - path: reports/model_selection.json
+      hash: md5
+      md5: d2f8daf2e24525d14bdfb644c559ab4d
+      size: 5990
+  model_evaluation:
+    cmd: python src/model_evaluation.py
+    deps:
+    - path: data/processed/X_test.csv
+      hash: md5
+      md5: 552e7335e83e46f9e49a0004abc7519d
+      size: 565
+    - path: data/processed/y_test.csv
+      hash: md5
+      md5: c403cd5f8b66ee75e569ab7254bade2c
+      size: 469
+    - path: models
+      hash: md5
+      md5: fd435bcd060bae7e33182fcfda1c9130.dir
+      size: 1635899
+      nfiles: 7
+    - path: reports/model_selection.json
+      hash: md5
+      md5: d2f8daf2e24525d14bdfb644c559ab4d
+      size: 5990
+    - path: src/model_evaluation.py
+      hash: md5
+      md5: 7c5291d494ed71abd9c6e807e435e9b9
+      size: 6833
+    params:
+      params.yaml:
+        experiment_name: Iris_DVC_Pipeline
+    outs:
+    - path: reports/evaluation_details.json
+      hash: md5
+      md5: 43ed4b3e2eb1977ba027f29f00aca65e
+      size: 5889
+    - path: reports/metrics.json
+      hash: md5
+      md5: 8c0b5a56defb4ad9e3eec64ba75aa8dc
+      size: 550

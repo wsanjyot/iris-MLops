@@ -1,0 +1,155 @@
+{
+    "champion_model": "SVM",
+    "selection_basis": "automated multi-criteria selection: accuracy gap strictly below 5.0%, then highest validation accuracy (within tolerance), then smaller model size, lower training time and lower prediction time",
+    "selection_explanation": "SVM selected: passed gap rule (< 5.0%); 4 finalist(s) within 1.0 pp of best validation accuracy (97.46%); lowest weighted size/train-time/predict-time cost.",
+    "selection_policy": {
+        "max_accuracy_gap_pct (strictly below)": 5.0,
+        "accuracy_tolerance_pct": 1.0,
+        "weights": {
+            "model_size_mb": 0.4,
+            "training_time_seconds": 0.3,
+            "prediction_time_ms": 0.3
+        },
+        "fallback_used": false,
+        "finalist_ranking": [
+            "SVM",
+            "KNN",
+            "RandomForest",
+            "GradientBoosting"
+        ],
+        "selection_data": "training data only (CV validation); test set untouched"
+    },
+    "selection_comparison": {
+        "KNN": {
+            "model_size_mb": 0.0117034912109375,
+            "training_time_seconds": 0.0024738999782130122,
+            "prediction_time_ms": 1.7749140004161745,
+            "training_accuracy_pct": 96.58119658119658,
+            "validation_accuracy_pct": 97.46376811594203,
+            "accuracy_gap_pct": -0.8825715347454519,
+            "eligible": true,
+            "status": "finalist_runner_up"
+        },
+        "DecisionTree": {
+            "model_size_mb": 0.0031232833862304688,
+            "training_time_seconds": 0.0027387000154703856,
+            "prediction_time_ms": 0.7425260008312762,
+            "training_accuracy_pct": 96.58119658119658,
+            "validation_accuracy_pct": 94.92753623188406,
+            "accuracy_gap_pct": 1.653660349312517,
+            "eligible": true,
+            "status": "eligible_but_below_accuracy_tolerance"
+        },
+        "SVM": {
+            "model_size_mb": 0.004246711730957031,
+            "training_time_seconds": 0.005014399997889996,
+            "prediction_time_ms": 0.8262960007414222,
+            "training_accuracy_pct": 97.43589743589743,
+            "validation_accuracy_pct": 97.46376811594203,
+            "accuracy_gap_pct": -0.02787068004460025,
+            "eligible": true,
+            "status": "champion"
+        },
+        "GaussianNB": {
+            "model_size_mb": 0.0020837783813476562,
+            "training_time_seconds": 0.002098199969623238,
+            "prediction_time_ms": 0.7377400004770607,
+            "training_accuracy_pct": 95.72649572649573,
+            "validation_accuracy_pct": 95.72463768115942,
+            "accuracy_gap_pct": 0.0018580453363057359,
+            "eligible": true,
+            "status": "eligible_but_below_accuracy_tolerance"
+        },
+        "RandomForest": {
+            "model_size_mb": 0.21157264709472656,
+            "training_time_seconds": 0.2350563000072725,
+            "prediction_time_ms": 32.67832599929534,
+            "training_accuracy_pct": 98.29059829059828,
+            "validation_accuracy_pct": 97.42753623188406,
+            "accuracy_gap_pct": 0.8630620587142204,
+            "eligible": true,
+            "status": "finalist_runner_up"
+        },
+        "GradientBoosting": {
+            "model_size_mb": 1.3231382369995117,
+            "training_time_seconds": 0.7669723999570124,
+            "prediction_time_ms": 1.719386000186205,
+            "training_accuracy_pct": 100.0,
+            "validation_accuracy_pct": 97.42753623188406,
+            "accuracy_gap_pct": 2.572463768115938,
+            "eligible": true,
+            "status": "finalist_runner_up"
+        }
+    },
+    "all_models_test_metrics": {
+        "KNN": {
+            "accuracy": 0.9666666666666667,
+            "precision_macro": 0.9696969696969697,
+            "recall_macro": 0.9666666666666667,
+            "f1_macro": 0.9665831244778613
+        },
+        "DecisionTree": {
+            "accuracy": 0.9333333333333333,
+            "precision_macro": 0.9333333333333332,
+            "recall_macro": 0.9333333333333332,
+            "f1_macro": 0.9333333333333332
+        },
+        "SVM": {
+            "accuracy": 1.0,
+            "precision_macro": 1.0,
+            "recall_macro": 1.0,
+            "f1_macro": 1.0
+        },
+        "GaussianNB": {
+            "accuracy": 0.9333333333333333,
+            "precision_macro": 0.9333333333333332,
+            "recall_macro": 0.9333333333333332,
+            "f1_macro": 0.9333333333333332
+        },
+        "RandomForest": {
+            "accuracy": 0.9666666666666667,
+            "precision_macro": 0.9696969696969697,
+            "recall_macro": 0.9666666666666667,
+            "f1_macro": 0.9665831244778612
+        },
+        "GradientBoosting": {
+            "accuracy": 0.9,
+            "precision_macro": 0.9023569023569024,
+            "recall_macro": 0.9,
+            "f1_macro": 0.899749373433584
+        }
+    },
+    "champion_classification_report": {
+        "Iris-setosa": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+        },
+        "Iris-versicolor": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+        },
+        "Iris-virginica": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 30.0
+        },
+        "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 30.0
+        }
+    }
+}

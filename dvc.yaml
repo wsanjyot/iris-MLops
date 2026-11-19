@@ -1,0 +1,68 @@
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+      - src/data_ingestion.py
+      - data/raw/Iris.csv
+    outs:
+      - data/ingested/iris.csv
+
+  data_preprocessing:
+    cmd: python src/data_preprocessing.py
+    deps:
+      - src/data_preprocessing.py
+      - data/ingested/iris.csv
+    params:
+      - test_size
+      - random_state
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+
+  feature_engineering:
+    cmd: python src/feature_engineering.py
+    deps:
+      - src/feature_engineering.py
+      - data/processed/train.csv
+      - data/processed/test.csv
+    outs:
+      - data/processed/X_train.csv
+      - data/processed/X_test.csv
+      - data/processed/y_train.csv
+      - data/processed/y_test.csv
+
+  model_building:
+    cmd: python src/model_building.py
+    deps:
+      - src/model_building.py
+      - data/processed/X_train.csv
+      - data/processed/y_train.csv
+    params:
+      - random_state
+      - cv_folds
+      - n_trials
+      - experiment_name
+      - selection
+      - measurement
+    outs:
+      - models
+      - reports/model_selection.json
+      - reports/model_comparison.csv
+      - reports/model_comparison.md
+
+  model_evaluation:
+    cmd: python src/model_evaluation.py
+    deps:
+      - src/model_evaluation.py
+      - models
+      - reports/model_selection.json
+      - data/processed/X_test.csv
+      - data/processed/y_test.csv
+    params:
+      - experiment_name
+    metrics:
+      - reports/metrics.json:
+          cache: false
+    outs:
+      - reports/evaluation_details.json:
+          cache: false

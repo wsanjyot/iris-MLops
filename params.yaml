@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------
+# Global settings (unchanged keys from the original project)
+# NOTE: values below are defaults I inferred - keep YOUR existing
+# values for test_size / random_state / cv_folds / n_trials /
+# experiment_name and only copy the new "selection" block.
+# ---------------------------------------------------------------
+test_size: 0.2
+random_state: 42
+cv_folds: 5
+n_trials: 30
+experiment_name: Iris_DVC_Pipeline
+
+# ---------------------------------------------------------------
+# NEW: automated multi-criteria champion selection
+# ---------------------------------------------------------------
+selection:
+  # Rule 1 - hard filter: (train accuracy - validation accuracy), in
+  # percentage points, must be STRICTLY below this value.
+  max_accuracy_gap_pct: 5.0
+
+  # Rule 2 - validation accuracy is the primary criterion. Eligible models
+  # within this many percentage points of the best eligible validation
+  # accuracy are treated as equally accurate "finalists".
+  accuracy_tolerance_pct: 1.0
+
+  # Rules 3-5 - among finalists, lower is better. Each criterion is
+  # min-max normalised across finalists (0 = best, 1 = worst) and combined
+  # with these weights. Order of importance: size > train time > predict time.
+  weights:
+    model_size_mb: 0.4
+    training_time_seconds: 0.3
+    prediction_time_ms: 0.3
+
+  # If NO model passes the gap rule: "smallest_gap" picks the model with the
+  # smallest gap (and logs a warning); "error" stops the pipeline.
+  fallback_if_none_eligible: smallest_gap
+
+  # Search objective: trials whose CV train/val gap is >= the threshold are
+  # penalised so Optuna steers toward low-overfitting configurations.
+  gap_penalty_in_search: true
+  gap_penalty_weight: 1.0
+
+# Timing measurement settings
+measurement:
+  training_time_repeats: 3        # final fit repeated N times, median reported
+  prediction_n_samples: 50        # single-row predictions per repetition
+  prediction_repeats: 5           # repetitions, median reported
